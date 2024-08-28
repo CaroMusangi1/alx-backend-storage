@@ -1,51 +1,30 @@
 #!/usr/bin/env python3
-import os
-import logging
+'''Task 12's module.
+'''
 from pymongo import MongoClient
 
-"""
-A script that provides some stats about
-Nginx logs stored in MongoDB.
-"""
+def print_nginx_request_logs(nginx_collection):
+    '''Prints stats about Nginx request logs.'''
+    # Count the total number of documents
+    log_count = nginx_collection.count_documents({})
+    print(f"{log_count} logs")
 
-# Setup basic logging
-logging.basicConfig(level=logging.INFO)
+    # Methods count
+    print("Methods:")
+    methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    for method in methods:
+        count = nginx_collection.count_documents({'method': method})
+        print(f"\tmethod {method}: {count}")
 
+    # GET requests to /status
+    status_check_count = nginx_collection.count_documents({'method': 'GET', 'path': '/status'})
+    print(f"{status_check_count} status check")
 
-def log_stats():
-    """
-    Connects to the MOngoDB database 'logs', queries the 'nginx' collection,
-    and prints statistics about the logs. It displays the total number of logs,
-    counts of different HTTPmethods, and the number of logs with method GET
-    and path /status.
-    """
-    try:
-        # MongoDB connection string from environment variable or default
-        mongo_url = os.getenv('MONGO_URL', 'mongodb://localhost:27017/')
-        client = MongoClient(mongo_url)
-        db = client['logs']
-        nginx_collection = db['nginx']
+def run():
+    '''Provides some stats about Nginx logs stored in MongoDB.'''
+    client = MongoClient('mongodb://127.0.0.1:27017')
+    nginx_collection = client.logs.nginx
+    print_nginx_request_logs(nginx_collection)
 
-        # Total number of logs
-        total_logs = nginx_collection.count_documents({})
-        logging.info(f"{total_logs} logs")
-
-        # Http methods statistics
-        methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-        logging.info("Methods:")
-
-        for method in methods:
-            count = nginx_collection.count_documents({"method": method})
-            logging.info(f"  method {method}: {count}")
-
-        # Number of documents with method=GET and path=/status
-        status_checks = nginx_collection.count_documents(
-                {"method": "GET", "path": "/status"})
-        logging.info(f"{status_checks} status check")
-
-    except Exception as e:
-        logging.error(f"An error occured: {e}")
-
-
-if __name__ == "__main__":
-    log_stats()
+if __name__ == '__main__':
+    run()
